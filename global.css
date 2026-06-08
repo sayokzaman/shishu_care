@@ -11,29 +11,49 @@
   --radius-xl: calc(var(--radius) + 4px);
 
   --spacing-hairline: hairlineWidth();
+
+  /* ShishuCare brand palette */
+  --color-brand-hero:              #1A4D35;
+  --color-brand-primary-light:     #EBF6F0;
+  --color-brand-prenatal:          #A8D5EC;
+  --color-brand-prenatal-text:     #1A446B;
+  --color-brand-postnatal:         #A8EDD0;
+  --color-brand-postnatal-text:    #1A6B3A;
+  --color-brand-milestone-bg:      #FFF9E6;
+  --color-brand-milestone-border:  #FCD34D;
+  --color-brand-milestone-text:    #78350F;
+  --color-brand-risk-bg:           #FEE9E9;
+  --color-brand-risk-border:       #FECACA;
+  --color-brand-risk-text:         #C53030;
+  --color-brand-input-border:      #D1D9D5;
+  --color-brand-input-bg:          #FAFCFB;
+  --color-brand-avatar-bg:         #D1E8D8;
+  --color-brand-mic-bg:            #F0F4F2;
+  --color-brand-role-icon-bg:      #E8EFF0;
+  --color-brand-role-icon-active:  #C8EAD8;
 }
 
 @layer theme {
   :root {
     @variant light {
-    --color-background:  oklch(1 0 0);
-    --color-foreground:  oklch(0.145 0 0);
-    --color-card:  oklch(1 0 0);
-    --color-card-foreground:  oklch(0.145 0 0);
-    --color-popover:  oklch(1 0 0);
-    --color-popover-foreground:  oklch(0.145 0 0);
-    --color-primary:  oklch(0.205 0 0);
-    --color-primary-foreground:  oklch(0.985 0 0);
+    --color-background:  #F4F9F6;
+    --color-foreground:  #111827;
+    --color-card:  #FFFFFF;
+    --color-card-foreground:  #111827;
+    --color-popover:  #FFFFFF;
+    --color-popover-foreground:  #111827;
+    --color-primary:  #1A6B47;
+    --color-primary-foreground:  #FFFFFF;
     --color-secondary:  oklch(0.97 0 0);
-    --color-secondary-foreground:  oklch(0.205 0 0);
+    --color-secondary-foreground:  #111827;
     --color-muted:  oklch(0.97 0 0);
-    --color-muted-foreground:  oklch(0.556 0 0);
+    --color-muted-foreground:  #6B7280;
     --color-accent:  oklch(0.97 0 0);
-    --color-accent-foreground:  oklch(0.205 0 0);
+    --color-accent-foreground:  #111827;
     --color-destructive:  oklch(0.577 0.245 27.325);
-    --color-border:  oklch(0.922 0 0);
-    --color-input:  oklch(0.922 0 0);
-    --color-ring:  oklch(0.708 0 0);
+    --color-border:  #E2E8E5;
+    --color-input:  #E2E8E5;
+    --color-ring:  #1A6B47;
     --color-chart-1:  oklch(0.646 0.222 41.116);
     --color-chart-2:  oklch(0.6 0.118 184.704);
     --color-chart-3:  oklch(0.398 0.07 227.392);

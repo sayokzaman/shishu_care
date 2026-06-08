@@ -1,5 +1,6 @@
 import '@/global.css';
 
+import { AuthProvider } from '@/lib/auth';
 import { NAV_THEME } from '@/lib/theme';
 import { ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
@@ -16,10 +17,17 @@ export default function RootLayout() {
   const { theme } = useUniwind();
 
   return (
-    <ThemeProvider value={NAV_THEME[theme ?? 'light']}>
-      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
-      <Stack />
-      <PortalHost />
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider value={NAV_THEME[theme ?? 'light']}>
+        <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="login" />
+          <Stack.Screen name="register" />
+          <Stack.Screen name="onboarding" />
+        </Stack>
+        <PortalHost />
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
