@@ -1,25 +1,76 @@
 import { useAuth } from '@/lib/auth';
-import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
+import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { Redirect, router } from 'expo-router';
-import { Lock, Menu, Phone } from 'lucide-react-native';
-import { useState } from 'react';
-import { ActivityIndicator, ScrollView, TextInput, View } from 'react-native';
+import { AlertTriangle, Eye, EyeOff, Lock, Phone, Leaf } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Input } from '@/components/ui/input';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  useSharedValue,
+  withSpring,
+  withTiming,
+  withRepeat,
+  withSequence,
+  useAnimatedStyle,
+  Easing,
+} from 'react-native-reanimated';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function LoginScreen() {
   const { login, isAuthenticated } = useAuth();
 
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lang, setLang] = useState<'en' | 'bn'>('en');
+
+  const btnScale = useSharedValue(1);
+  const orb1 = useSharedValue(1);
+  const orb2 = useSharedValue(1);
+  const orb3 = useSharedValue(0);
+
+  useEffect(() => {
+    orb1.value = withRepeat(
+      withSequence(
+        withTiming(1.18, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
+      ),
+      -1,
+      false,
+    );
+    orb2.value = withRepeat(
+      withSequence(
+        withTiming(0.85, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1.1, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+      ),
+      -1,
+      false,
+    );
+    orb3.value = withRepeat(
+      withSequence(
+        withTiming(0.06, { duration: 1800 }),
+        withTiming(0.12, { duration: 1800 }),
+      ),
+      -1,
+      false,
+    );
+  }, []);
+
+  const orb1Style = useAnimatedStyle(() => ({ transform: [{ scale: orb1.value }] }));
+  const orb2Style = useAnimatedStyle(() => ({ transform: [{ scale: orb2.value }] }));
+  const orb3Style = useAnimatedStyle(() => ({ opacity: orb3.value }));
+  const btnAnimStyle = useAnimatedStyle(() => ({ transform: [{ scale: btnScale.value }] }));
+
   if (isAuthenticated) {
     return <Redirect href="/(tabs)/home" />;
   }
-
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async () => {
     setError(null);
@@ -27,6 +78,9 @@ export default function LoginScreen() {
       setError('Please enter your phone number and password.');
       return;
     }
+    btnScale.value = withSpring(0.95, { damping: 15 }, () => {
+      btnScale.value = withSpring(1, { damping: 12 });
+    });
     setLoading(true);
     try {
       await login(phone, password);
@@ -39,106 +93,222 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="bg-background flex-1">
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* ── Header ── */}
-        <View className="bg-card border-border flex-row items-center justify-between border-b px-5 py-3.5">
-          <Text className="text-primary text-xl font-bold">ShishuCare</Text>
-
-          <View className="flex-row gap-1.5">
-            <Button size="sm" className="h-auto rounded-full px-3 py-1.5">
-              <Text>English</Text>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-border h-auto rounded-full px-3 py-1.5">
-              <Text className="text-foreground">বাংলা</Text>
-            </Button>
-          </View>
-        </View>
+    <SafeAreaView className="flex-1 bg-brand-hero" edges={['top']}>
+      <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
 
         {/* ── Hero ── */}
-        <View className="bg-brand-hero h-52 justify-end">
-          <View className="absolute inset-0 items-center justify-center opacity-10">
-            <Text className="text-[90px]">🤱</Text>
-          </View>
-          <View className="gap-2 px-6 pb-7">
-            <Text className="text-2xl font-bold text-white">Welcome Back</Text>
-            <Text className="text-[13px] leading-5 text-white/80">
-              Sign in to continue your child&apos;s health journey with personalized care and
-              guidance.
+        <View className="bg-brand-hero h-[290px] items-center justify-center px-6 pb-10 overflow-hidden">
+          {/* Animated ambient orbs */}
+          <Animated.View
+            style={[
+              orb1Style,
+              {
+                position: 'absolute',
+                width: 220,
+                height: 220,
+                borderRadius: 110,
+                top: -80,
+                right: -70,
+                backgroundColor: 'rgba(255,255,255,0.07)',
+              },
+            ]}
+          />
+          <Animated.View
+            style={[
+              orb2Style,
+              {
+                position: 'absolute',
+                width: 150,
+                height: 150,
+                borderRadius: 75,
+                bottom: -30,
+                left: -40,
+                backgroundColor: 'rgba(255,255,255,0.06)',
+              },
+            ]}
+          />
+          <Animated.View
+            style={[
+              orb3Style,
+              {
+                position: 'absolute',
+                width: 90,
+                height: 90,
+                borderRadius: 45,
+                top: 20,
+                left: 30,
+                backgroundColor: 'white',
+              },
+            ]}
+          />
+
+          {/* Logo mark */}
+          <Animated.View
+            entering={FadeIn.duration(700).delay(100)}
+            style={{
+              width: 84,
+              height: 84,
+              borderRadius: 24,
+              backgroundColor: 'rgba(255,255,255,0.18)',
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.3)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 20,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.2,
+              shadowRadius: 16,
+              elevation: 8,
+            }}>
+            <Leaf color="white" size={36} strokeWidth={1.5} />
+          </Animated.View>
+
+          <Animated.View entering={FadeInDown.duration(500).delay(250)}>
+            <Text className="text-white text-[33px] font-extrabold tracking-tight mb-2 text-center">
+              ShishuCare
             </Text>
-          </View>
+          </Animated.View>
+          <Animated.View entering={FadeInDown.duration(500).delay(350)}>
+            <Text className="text-white/70 text-center text-[14px] leading-6 font-medium">
+              Your compassionate guide for{'\n'}every parenting journey
+            </Text>
+          </Animated.View>
         </View>
 
-        {/* ── Page content ── */}
-        <View className="gap-5 p-5 pb-10">
-          {/* Login form */}
-          <View className="border-border bg-card gap-4 rounded-2xl border p-5">
-            <Text className="text-foreground text-lg font-bold">Sign In</Text>
+        {/* ── Form card ── */}
+        <Animated.View
+          entering={FadeInDown.duration(600).delay(150).springify().damping(18)}
+          className="bg-background px-5 pt-8 pb-10"
+          style={{
+            borderTopLeftRadius: 36,
+            borderTopRightRadius: 36,
+            marginTop: -28,
+            minHeight: 520,
+          }}>
 
-            {error && (
-              <View className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-3">
-                <Text className="text-[13px] text-red-600">{error}</Text>
+          {/* Pill handle */}
+          <View className="w-10 h-1 rounded-full bg-border self-center mb-7" />
+
+          <Animated.View entering={FadeInDown.duration(400).delay(350)}>
+            <Text className="text-foreground text-[28px] font-extrabold mb-1">
+              Welcome back
+            </Text>
+            <Text className="text-muted-foreground text-[14px] mb-7">
+              Sign in to continue caring for your child
+            </Text>
+          </Animated.View>
+
+          {/* Error banner */}
+          {error && (
+            <Animated.View
+              entering={FadeInDown.duration(300)}
+              className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 mb-5 flex-row items-start gap-3">
+              <AlertTriangle color="#EF4444" size={16} strokeWidth={2} />
+              <Text className="text-red-600 text-[13px] flex-1 leading-5">{error}</Text>
+            </Animated.View>
+          )}
+
+          {/* Phone */}
+          <Animated.View entering={FadeInDown.duration(400).delay(430)} className="mb-4">
+            <Text className="text-foreground text-[13px] font-semibold mb-2">Phone Number</Text>
+            <View style={{ position: 'relative' }}>
+              <View
+                style={{ position: 'absolute', left: 16, top: 0, bottom: 0, justifyContent: 'center', zIndex: 10 }}>
+                <Icon as={Phone} color="#0A0A0A" size={17} />
               </View>
-            )}
-
-            {/* Phone */}
-            <View className="gap-1.5">
-              <Text className="text-muted-foreground text-[13px] font-medium">Phone Number</Text>
-              <View className="relative">
-                <Icon as={Phone} color="#9CA3AF" size={15} className="absolute top-3.5 left-3" />
-
-                <Input
-                  className="web:h-12 h-12 pl-10 text-sm"
-                  placeholder="017XX XXXXXX"
-                  placeholderTextColor="#9CA3AF"
-                  keyboardType="phone-pad"
-                  value={phone}
-                  onChangeText={setPhone}
-                />
-              </View>
+              <Input
+                className="h-14 pl-12 rounded-2xl border-brand-input-border bg-brand-input-bg text-sm"
+                placeholder="017XX XXXXXX"
+                placeholderTextColor="#9CA3AF"
+                keyboardType="phone-pad"
+                value={phone}
+                onChangeText={setPhone}
+              />
             </View>
+          </Animated.View>
 
-            {/* Password */}
-            <View className="gap-1.5">
-              <Text className="text-muted-foreground text-[13px] font-medium">Password</Text>
-              <View className="relative">
-                <Icon as={Lock} color="#9CA3AF" size={15} className="absolute top-3.5 left-3" />
-
-                <Input
-                  className="web:h-12 h-12 pl-10 text-sm"
-                  placeholder="Enter your password"
-                  placeholderTextColor="#9CA3AF"
-                  secureTextEntry
-                  value={password}
-                  onChangeText={setPassword}
-                />
+          {/* Password */}
+          <Animated.View entering={FadeInDown.duration(400).delay(490)} className="mb-7">
+            <Text className="text-foreground text-[13px] font-semibold mb-2">Password</Text>
+            <View style={{ position: 'relative' }}>
+              <View
+                style={{ position: 'absolute', left: 16, top: 0, bottom: 0, justifyContent: 'center', zIndex: 10 }}>
+                <Icon as={Lock} color="#0A0A0A" size={17} />
               </View>
+              <Input
+                className="h-14 pl-12 pr-14 rounded-2xl border-brand-input-border bg-brand-input-bg text-sm"
+                placeholder="Enter your password"
+                placeholderTextColor="#9CA3AF"
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={setPassword}
+              />
+              <Pressable
+                style={{ position: 'absolute', right: 16, top: 0, bottom: 0, justifyContent: 'center' }}
+                onPress={() => setShowPassword(!showPassword)}>
+                <Icon as={showPassword ? EyeOff : Eye} color="#9CA3AF" size={18} />
+              </Pressable>
             </View>
-          </View>
+          </Animated.View>
 
-          {/* CTA */}
-          <Button
-            className="h-auto w-full rounded-xl py-4"
-            onPress={handleLogin}
-            disabled={loading}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text>Sign In</Text>}
-          </Button>
+          {/* Sign in CTA */}
+          <Animated.View entering={FadeInDown.duration(400).delay(550)}>
+            <AnimatedPressable
+              style={[
+                btnAnimStyle,
+                {
+                  height: 56,
+                  borderRadius: 18,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 20,
+                  backgroundColor: '#0A0A0A',
+                  shadowColor: '#0A0A0A',
+                  shadowOffset: { width: 0, height: 8 },
+                  shadowOpacity: loading ? 0.15 : 0.4,
+                  shadowRadius: 16,
+                  elevation: 8,
+                  opacity: loading ? 0.75 : 1,
+                },
+              ]}
+              onPress={handleLogin}
+              disabled={loading}>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text className="text-white text-[16px] font-bold tracking-wide">Sign In</Text>
+              )}
+            </AnimatedPressable>
+          </Animated.View>
 
-          {/* Footer */}
-          <View className="items-center">
-            <Text className="text-muted-foreground text-sm">
+          {/* Language toggle */}
+          <Animated.View entering={FadeInDown.duration(400).delay(600)} className="flex-row justify-center gap-2 mb-7">
+            <Pressable
+              className={`rounded-full px-4 py-1.5 ${lang === 'en' ? 'bg-brand-primary-light' : 'bg-muted'}`}
+              onPress={() => setLang('en')}>
+              <Text className={`text-[13px] font-semibold ${lang === 'en' ? 'text-primary' : 'text-muted-foreground'}`}>
+                English
+              </Text>
+            </Pressable>
+            <Pressable
+              className={`rounded-full px-4 py-1.5 ${lang === 'bn' ? 'bg-brand-primary-light' : 'bg-muted'}`}
+              onPress={() => setLang('bn')}>
+              <Text className={`text-[13px] font-semibold ${lang === 'bn' ? 'text-primary' : 'text-muted-foreground'}`}>
+                বাংলা
+              </Text>
+            </Pressable>
+          </Animated.View>
+
+          <Animated.View entering={FadeInDown.duration(400).delay(650)} className="items-center">
+            <Text className="text-muted-foreground text-[14px]">
               Don&apos;t have an account?{' '}
-              <Text
-                className="text-primary font-semibold"
-                onPress={() => router.replace('/register')}>
-                Register
+              <Text className="text-primary font-bold" onPress={() => router.replace('/register')}>
+                Create Account
               </Text>
             </Text>
-          </View>
-        </View>
+          </Animated.View>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );

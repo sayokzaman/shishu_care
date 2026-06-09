@@ -1,4 +1,6 @@
 import axios, { AxiosError } from 'axios';
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 let authToken: string | null = null;
 
@@ -6,8 +8,21 @@ export function setAuthToken(token: string | null) {
   authToken = token;
 }
 
+function getBaseURL(): string {
+  if (Platform.OS === 'web') return 'http://localhost:3000';
+  // Expo Go / dev client: hostUri looks like "192.168.x.x:8082" — grab just the IP
+  const hostUri = (Constants.expoConfig as any)?.hostUri ?? (Constants as any).manifest?.debuggerHost ?? '';
+  if (hostUri) {
+    const host = hostUri.split(':')[0];
+    if (host && host !== 'localhost') return `http://${host}:3000`;
+  }
+  // Android emulator: 10.0.2.2 maps to host machine
+  if (Platform.OS === 'android') return 'http://10.0.2.2:3000';
+  return 'http://localhost:3000';
+}
+
 const apiClient = axios.create({
-  baseURL: 'http://localhost:3000',
+  baseURL: getBaseURL(),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

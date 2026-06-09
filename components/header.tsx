@@ -1,8 +1,6 @@
-import { View, Text } from 'react-native';
-import React from 'react';
-import { Icon } from '@/components/ui/icon';
-import { Button } from '@/components/ui/button';
-import { Menu } from 'lucide-react-native';
+import { Bell, Menu } from 'lucide-react-native';
+import { Pressable, View } from 'react-native';
+import { Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Header = () => {
@@ -10,20 +8,58 @@ const Header = () => {
 
   return (
     <View
-      className="bg-card border-border fixed top-0 right-0 left-0 z-10 min-h-16 flex-row items-center justify-between border-b px-5 pb-3.5"
-      style={{ paddingTop: insets.top + 10 }}>
-      <View className="flex-row items-center gap-2.5">
-        <Icon as={Menu} color="#1A6B47" size={22} strokeWidth={2} />
-        <Text className="text-primary text-xl font-bold">ShishuCare</Text>
+      style={{
+        paddingTop: insets.top + 8,
+        paddingBottom: 12,
+        paddingHorizontal: 20,
+        backgroundColor: '#FFFFFF',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E2EEE8',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Pressable
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            backgroundColor: '#E8F7EE',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+          <Menu color="#1F7A53" size={18} strokeWidth={2} />
+        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Text style={{ fontSize: 14 }}>🌱</Text>
+          <Text style={{ color: '#1F7A53', fontSize: 18, fontWeight: '800' }}>ShishuCare</Text>
+        </View>
       </View>
 
-      <View className="flex-row gap-1.5">
-        <Button
-          variant="outline"
-          size="sm"
-          className="border-border h-auto rounded-full px-3.5 py-1.5">
-          <Text className="text-foreground text-[13px]">বাংলা</Text>
-        </Button>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Pressable
+          style={{
+            backgroundColor: '#E8F7EE',
+            borderRadius: 20,
+            paddingHorizontal: 12,
+            paddingVertical: 5,
+          }}>
+          <Text style={{ color: '#1F7A53', fontSize: 12, fontWeight: '600' }}>বাংলা</Text>
+        </Pressable>
+        <Pressable
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            backgroundColor: '#F6FCF8',
+            borderWidth: 1,
+            borderColor: '#E2EEE8',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+          <Bell color="#6B7280" size={17} strokeWidth={1.8} />
+        </Pressable>
       </View>
     </View>
   );
