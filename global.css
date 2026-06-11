@@ -13,9 +13,10 @@
   --spacing-hairline: hairlineWidth();
 
   /* ── ShishuCare brand palette — monochrome minimalist ── */
-  --color-brand-hero:              #0A0A0A;
+  --color-brand-hero:              #0F5238;
   --color-brand-hero-soft:         #1A1A1A;
 
+  --color-brand-primary:           #0F5238;
   --color-brand-primary-light:     #F5F5F5;
   --color-brand-primary-mid:       #D4D4D4;
 
@@ -64,7 +65,7 @@
       --color-secondary-foreground:   #0A0A0A;
       --color-muted:                  #F5F5F5;
       --color-muted-foreground:       #737373;
-      --color-accent:                 #F5F5F5;
+      --color-accent:                 #A8E7C5;
       --color-accent-foreground:      #0A0A0A;
       --color-destructive:            oklch(0.577 0.245 27.325);
       --color-border:                 #E5E5E5;

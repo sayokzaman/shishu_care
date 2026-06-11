@@ -18,8 +18,21 @@ type AuthState = {
   user: User | null;
 };
 
+type RegisterInput = {
+  phone: string;
+  fullNameBn: string;
+  fullNameEn?: string;
+  password: string;
+  role: 'parent' | 'health_worker';
+  upazillaId: number;
+  districtId: number;
+  divisionId: number;
+  dateOfBirth?: Date;
+};
+
 type AuthContextType = AuthState & {
   login: (phone: string, password: string) => Promise<void>;
+  register: (input: RegisterInput) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -61,6 +74,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuth({ token: data.token, user: data.user });
   };
 
+  const register = async (input: RegisterInput) => {
+    const body = {
+      ...input,
+      dateOfBirth: input.dateOfBirth ? input.dateOfBirth.toISOString() : undefined,
+    };
+    const data = await sendRequest('/api/auth/register', 'POST', body as any);
+    await AsyncStorage.multiSet([
+      [TOKEN_KEY, data.token],
+      [USER_KEY, JSON.stringify(data.user)],
+    ]);
+    setAuthToken(data.token);
+    setAuth({ token: data.token, user: data.user });
+  };
+
   const logout = async () => {
     await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
     setAuthToken(null);
@@ -68,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ ...auth, login, logout, isAuthenticated: !!auth.token, isLoading }}>
+    <AuthContext.Provider value={{ ...auth, login, register, logout, isAuthenticated: !!auth.token, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

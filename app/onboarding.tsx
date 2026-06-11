@@ -169,7 +169,7 @@ export default function OnboardingScreen() {
             selected ? 'bg-primary' : 'bg-primary/40'
           }`}
           disabled={!selected}
-          onPress={() => router.push('/child-info')}
+          onPress={() => router.push(selected === 'prenatal' ? '/child-info-prenatal' : '/child-info-postnatal')}
           style={
             selected
               ? {
