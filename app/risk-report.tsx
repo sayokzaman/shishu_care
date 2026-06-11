@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Header from '@/components/header'
 
 type RiskLevel = 'low' | 'moderate' | 'high';
 
@@ -60,7 +61,7 @@ function computeRisk(weightKg: number, heightCm: number, ageMonths: number, brac
 }
 
 const RISK_META: Record<RiskLevel, { label: string; color: string; bg: string; border: string; Icon: any; advice: string }> = {
-  low:      { label: 'Low Risk',      color: '#0A0A0A', bg: '#F5F5F5', border: '#D4D4D4', Icon: ShieldCheck, advice: 'Your child is growing well. Continue regular check-ups and vaccinations.' },
+  low:      { label: 'Low Risk',      color: '#0F5238', bg: '#F5F5F5', border: '#D4D4D4', Icon: ShieldCheck, advice: 'Your child is growing well. Continue regular check-ups and vaccinations.' },
   moderate: { label: 'Moderate Risk', color: '#D97706', bg: '#FFFBEB', border: '#FCD34D', Icon: AlertTriangle, advice: 'Some factors need attention. Visit your nearest Community Clinic within 2 weeks.' },
   high:     { label: 'High Risk',     color: '#DC2626', bg: '#FEF2F2', border: '#FCA5A5', Icon: AlertTriangle, advice: 'Immediate action recommended. Visit your Upazila Health Complex or district hospital.' },
 };
@@ -97,15 +98,7 @@ export default function RiskReportScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F5F5F5' }}>
-        <Pressable onPress={() => router.back()} style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#F5F5F5', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-          <ArrowLeft size={18} color="#0A0A0A" />
-        </Pressable>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: '#0A0A0A' }}>Risk Report</Text>
-          {ageLabel ? <Text style={{ fontSize: 12, color: '#737373' }}>{childName} · {ageLabel}</Text> : null}
-        </View>
-      </View>
+      <Header title="Risk Report" emoji="📊" />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 110 }}>
 
@@ -133,7 +126,7 @@ export default function RiskReportScreen() {
         {/* Factor breakdown */}
         <Text style={{ fontSize: 14, fontWeight: '700', color: '#0A0A0A', marginBottom: 12 }}>Factor Breakdown</Text>
         {result.factors.map((f, i) => {
-          const iconColor = f.status === 'ok' ? '#0A0A0A' : f.status === 'warn' ? '#D97706' : '#DC2626';
+          const iconColor = f.status === 'ok' ? '#0F5238' : f.status === 'warn' ? '#D97706' : '#DC2626';
           const bgColor = f.status === 'ok' ? '#F5F5F5' : f.status === 'warn' ? '#FFFBEB' : '#FEF2F2';
           return (
             <Animated.View key={f.label} entering={FadeInDown.duration(400).delay(160 + i * 70)} style={{ backgroundColor: bgColor, borderRadius: 14, padding: 14, marginBottom: 10 }}>
@@ -148,7 +141,7 @@ export default function RiskReportScreen() {
 
         {/* CTA */}
         <Animated.View entering={FadeInDown.duration(400).delay(400)} style={{ marginTop: 8 }}>
-          <Pressable onPress={() => router.push('/vaccination')} style={{ backgroundColor: '#0A0A0A', borderRadius: 16, height: 52, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+          <Pressable onPress={() => router.push('/vaccination')} style={{ backgroundColor: '#0F5238', borderRadius: 16, height: 52, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
             <Text style={{ color: 'white', fontSize: 15, fontWeight: '700' }}>View Vaccination Status →</Text>
           </Pressable>
           <Pressable onPress={() => router.push('/emergency')} style={{ borderWidth: 1.5, borderColor: '#DC2626', borderRadius: 16, height: 52, alignItems: 'center', justifyContent: 'center' }}>

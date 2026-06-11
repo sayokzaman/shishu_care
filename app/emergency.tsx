@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import Header from '@/components/header'
 
 type Urgency = 'critical' | 'urgent' | 'moderate';
 
@@ -99,15 +100,7 @@ export default function EmergencyScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F5F5F5' }}>
-        <Pressable onPress={() => router.back()} style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#F5F5F5', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-          <ArrowLeft size={18} color="#0A0A0A" />
-        </Pressable>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: '#0A0A0A' }}>Emergency Routing</Text>
-          <Text style={{ fontSize: 12, color: '#737373' }}>Select symptoms to find the right facility</Text>
-        </View>
-      </View>
+      <Header title="Emergency Routing" emoji="🚑" secondaryText='Select symptoms to find the right facility' />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 110 }}>
 
@@ -172,7 +165,7 @@ export default function EmergencyScreen() {
 
         <Pressable
           onPress={classify}
-          style={{ backgroundColor: '#0A0A0A', borderRadius: 16, height: 54, alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>
+          style={{ backgroundColor: '#0F5238', borderRadius: 16, height: 54, alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>
           <Text style={{ color: 'white', fontSize: 16, fontWeight: '700' }}>Find the Right Facility →</Text>
         </Pressable>
 
