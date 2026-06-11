@@ -16,6 +16,7 @@ import {
   Gamepad2,
   Lightbulb,
   MessageCircle,
+  Mic,
   Moon,
   ShieldCheck,
   Sparkles,
@@ -147,6 +148,14 @@ const FEATURES: Feature[] = [
     route: '/emergency',
   },
   {
+    label: 'Cry Analyzer',
+    sub: 'Why is baby crying?',
+    Icon: Mic,
+    color: '#7C3AED',
+    bg: '#F5F3FF',
+    route: '/baby-cry-analyzer',
+  },
+  {
     label: 'Dashboard',
     sub: 'District health stats',
     Icon: ClipboardList,
@@ -250,7 +259,7 @@ export default function HomeScreen() {
   };
 
   return (
-      <SafeAreaView>
+      <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
     <AndroidBlurScreenWrapper>
         <ScrollView
           showsVerticalScrollIndicator={false}
