@@ -88,7 +88,7 @@ export default function ChildInfoPostnatalScreen() {
     setLoading(true);
     try {
       const birthWeightVal = birthWeight ? parseFloat(birthWeight) : undefined;
-      await sendRequest('/api/onboarding/postnatal', 'POST', {
+      const data = await sendRequest('/api/onboarding/postnatal', 'POST', {
         fullNameBn: fullNameBn.trim(),
         fullNameEn: fullNameEn.trim() || undefined,
         dateOfBirth: dob,
@@ -100,6 +100,7 @@ export default function ChildInfoPostnatalScreen() {
         knownConditions: conditions.length > 0 ? conditions : undefined,
       } as any);
       await saveChild({
+        id: data?.child?.id,
         name: fullNameBn.trim(),
         dob,
         gender: gender === 'unknown' ? 'other' : gender!,

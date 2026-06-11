@@ -36,6 +36,14 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+export const fetchVaccinations = async (childId?: number): Promise<any> => {
+  return sendRequest('/api/vaccinations', 'GET', null, childId ? ({ childId } as any) : null);
+};
+
+export const recordVaccination = async (id: number, givenDate: string, facilityName?: string): Promise<any> => {
+  return sendRequest(`/api/vaccinations/${id}`, 'PATCH', { givenDate, facilityName } as any);
+};
+
 export const sendRequest = async (url: string, method = 'GET', data = null, params = null) => {
   try {
     const response = await apiClient({ url, method, data, params });

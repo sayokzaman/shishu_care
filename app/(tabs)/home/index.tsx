@@ -1,6 +1,7 @@
 import { Text } from '@/components/ui/text';
 import * as Checkbox from '@rn-primitives/checkbox';
 import { formatAge, getAgeMonths, loadChild, type ChildData } from '@/lib/child';
+import { sendRequest } from '@/lib/api';
 import { router } from 'expo-router';
 import {
   Activity,
@@ -23,7 +24,7 @@ import {
   Users,
   Utensils,
 } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import Animated, {
   Easing,
@@ -38,6 +39,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { AndroidBlurScreenWrapper } from '@/app/(tabs)/_layout';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Header from '@/components/header'
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -67,14 +69,6 @@ const FEATURES: Feature[] = [
     route: '/care-guide',
   },
   {
-    label: 'Risk Report',
-    sub: 'WHO-based screening',
-    Icon: ShieldCheck,
-    color: '#DC2626',
-    bg: '#FEF2F2',
-    route: '/risk-report',
-  },
-  {
     label: 'Nutrition',
     sub: 'Age-appropriate foods',
     Icon: Utensils,
@@ -83,13 +77,24 @@ const FEATURES: Feature[] = [
     route: '/nutrition',
   },
   {
-    label: 'Growth Check',
+    label: 'Milestones',
     sub: 'Milestone checklist',
     Icon: Activity,
     color: '#7C3AED',
     bg: '#F5F3FF',
-    route: '/growth-check',
+    route: '/milestones',
   },
+  {
+    label: 'Myth Buster',
+    sub: 'Fact-check chatbot',
+    Icon: MessageCircle,
+    color: '#0A0A0A',
+    bg: '#F5F5F5',
+    route: '/chatbot',
+  },
+];
+
+const MEDICALS: Feature[] = [
   {
     label: 'Vaccination',
     sub: 'Bangladesh EPI schedule',
@@ -99,6 +104,22 @@ const FEATURES: Feature[] = [
     route: '/vaccination',
   },
   {
+    label: 'Risk Report',
+    sub: 'WHO-based screening',
+    Icon: ShieldCheck,
+    color: '#DC2626',
+    bg: '#FEF2F2',
+    route: '/risk-report',
+  },
+  {
+    label: 'Emergency',
+    sub: 'Find the right facility',
+    Icon: AlertTriangle,
+    color: '#DC2626',
+    bg: '#FEF2F2',
+    route: '/emergency',
+  },
+  {
     label: 'Medical Report',
     sub: 'Exportable health log',
     Icon: FileText,
@@ -106,6 +127,9 @@ const FEATURES: Feature[] = [
     bg: '#F5F5F5',
     route: '/medical-report',
   },
+];
+
+const EXTRAS: Feature[] = [
   {
     label: 'Games',
     sub: 'Mental growth activities',
@@ -131,22 +155,6 @@ const FEATURES: Feature[] = [
     route: '/community',
   },
   {
-    label: 'Myth Buster',
-    sub: 'Fact-check chatbot',
-    Icon: MessageCircle,
-    color: '#0A0A0A',
-    bg: '#F5F5F5',
-    route: '/chatbot',
-  },
-  {
-    label: 'Emergency',
-    sub: 'Find the right facility',
-    Icon: AlertTriangle,
-    color: '#DC2626',
-    bg: '#FEF2F2',
-    route: '/emergency',
-  },
-  {
     label: 'Dashboard',
     sub: 'District health stats',
     Icon: ClipboardList,
@@ -155,6 +163,31 @@ const FEATURES: Feature[] = [
     route: '/dashboard',
   },
 ];
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+function sleepTotalLabel(sessions: { startedAt: string; endedAt?: string | null }[]): string {
+  const total = sessions.reduce((sum, s) => {
+    if (!s.endedAt) return sum;
+    return (
+      sum + Math.round((new Date(s.endedAt).getTime() - new Date(s.startedAt).getTime()) / 60000)
+    );
+  }, 0);
+  if (total === 0) return '—';
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (h > 0 && m > 0) return `${h}h ${m}m`;
+  if (h > 0) return `${h}h`;
+  return `${m}m`;
+}
 
 function PulseRing() {
   const opacity = useSharedValue(0.5);
@@ -220,7 +253,7 @@ function FeatureCard({ feature, index }: { feature: Feature; index: number }) {
         <View className="mb-2.5 size-11 items-center justify-center rounded-[14px] bg-black/[6%]">
           <feature.Icon size={22} color={feature.color} strokeWidth={1.8} />
         </View>
-        <Text className="text-foreground mb-0.5 text-sm font-bold">{feature.label}</Text>
+        <Text className="text-black mb-0.5 text-sm font-bold">{feature.label}</Text>
         <Text className="text-muted-foreground text-[11px] leading-4">{feature.sub}</Text>
       </Pressable>
     </Animated.View>
@@ -232,6 +265,12 @@ export default function HomeScreen() {
   const [child, setChild] = useState<ChildData | null>(null);
   const [ageLabel, setAgeLabel] = useState('');
 
+  const [lastFeedLabel, setLastFeedLabel] = useState('—');
+  const [lastFeedMs, setLastFeedMs] = useState<number | null>(null);
+  const [sleepLabel, setSleepLabel] = useState('—');
+  const [hasSleepToday, setHasSleepToday] = useState<boolean | null>(null);
+  const [activityCount, setActivityCount] = useState<number | null>(null);
+
   useEffect(() => {
     loadChild().then((c) => {
       if (!c) return;
@@ -241,6 +280,40 @@ export default function HomeScreen() {
     });
   }, []);
 
+  const loadTracking = useCallback(async () => {
+    const [feedRes, sleepRes, actRes] = await Promise.allSettled([
+      sendRequest('/api/feeding/sessions'),
+      sendRequest('/api/sleep/sessions'),
+      sendRequest('/api/activities/sessions'),
+    ]);
+
+    if (feedRes.status === 'fulfilled') {
+      const sessions: { fedAt: string }[] = feedRes.value.sessions ?? [];
+      if (sessions.length > 0) {
+        const latest = sessions.reduce((a, b) => (new Date(a.fedAt) > new Date(b.fedAt) ? a : b));
+        setLastFeedLabel(timeAgo(latest.fedAt));
+        setLastFeedMs(new Date(latest.fedAt).getTime());
+      } else {
+        setLastFeedLabel('None today');
+        setLastFeedMs(null);
+      }
+    }
+
+    if (sleepRes.status === 'fulfilled') {
+      const sessions = sleepRes.value.sessions ?? [];
+      setSleepLabel(sleepTotalLabel(sessions));
+      setHasSleepToday(sessions.length > 0);
+    }
+
+    if (actRes.status === 'fulfilled') {
+      setActivityCount((actRes.value.sessions ?? []).length);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadTracking();
+  }, [loadTracking]);
+
   const doneCare = careItems.filter((i) => i.done).length;
   const childName = child?.name ?? 'Your Child';
   const parentGreet = 'Sarah';
@@ -249,13 +322,24 @@ export default function HomeScreen() {
     setCareItems((prev) => prev.map((i) => (i.id === id ? { ...i, done: !i.done } : i)));
   };
 
+  const feedAlert = lastFeedMs === null || Date.now() - lastFeedMs > 3 * 60 * 60 * 1000;
+  const sleepAlert = hasSleepToday === false;
+
+  const greetingActivity =
+    activityCount !== null
+      ? `${activityCount} ${activityCount === 1 ? 'activity' : 'activities'}`
+      : '…';
+
   return (
-      <SafeAreaView>
-    <AndroidBlurScreenWrapper>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
+      <AndroidBlurScreenWrapper>
+        <Header title="Shishu Care" emoji="🏠">
+
+        </Header>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 110 }}
-          className="bg-background flex-1">
+          className="bg-white flex-1 text-black">
           {/* ── Greeting card ── */}
           <Animated.View
             entering={FadeInDown.duration(500).delay(50).springify()}
@@ -298,9 +382,9 @@ export default function HomeScreen() {
 
             <View className="rounded-[14px] border border-white/12 bg-white/10 px-3.5 py-2.5">
               <Text className="text-[13px] leading-5 text-white/85">
-                Today&apos;s plan is ready —{' '}
-                <Text className="font-extrabold text-white">3 activities</Text> and{' '}
-                <Text className="font-extrabold text-white">1 feeding</Text> scheduled.
+                Today so far — <Text className="font-extrabold text-white">{greetingActivity}</Text>{' '}
+                logged and{' '}
+                <Text className="font-extrabold text-white">last fed {lastFeedLabel}</Text>.
               </Text>
             </View>
           </Animated.View>
@@ -310,18 +394,30 @@ export default function HomeScreen() {
             {[
               {
                 label: 'Last Feed',
-                value: '2h ago',
+                value: lastFeedLabel,
                 Icon: Droplets,
                 color: '#2563EB',
                 bg: '#EFF6FF',
+                alert: feedAlert,
+                message: 'Baby needs food',
               },
-              { label: 'Sleep', value: '6.5 hrs', Icon: Moon, color: '#7C3AED', bg: '#F5F3FF' },
               {
-                label: 'Weight',
-                value: child?.weightKg ? `${child.weightKg} kg` : '—',
-                Icon: Baby,
-                color: '#0A0A0A',
-                bg: '#F5F5F5',
+                label: 'Sleep',
+                value: sleepLabel,
+                Icon: Moon,
+                color: '#7C3AED',
+                bg: '#F5F3FF',
+                alert: sleepAlert,
+                message: 'Baby needs sleep',
+              },
+              {
+                label: 'Activities',
+                value: activityCount !== null ? String(activityCount) : '—',
+                Icon: Activity,
+                color: '#0EA5E9',
+                bg: '#F0F9FF',
+                alert: false,
+                message: '',
               },
             ].map((stat, i) => (
               <Animated.View
@@ -329,17 +425,42 @@ export default function HomeScreen() {
                 entering={FadeInDown.duration(400)
                   .delay(100 + i * 70)
                   .springify()}
-                className="flex-1 items-center gap-[5px] rounded-[18px] p-3"
-                style={{ backgroundColor: stat.bg }}>
+                style={{ flex: 1, position: 'relative' }}>
+                {stat.alert && (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      top: -7,
+                      right: -4,
+                      zIndex: 10,
+                      backgroundColor: '#F97316',
+                      borderRadius: 999,
+                      paddingHorizontal: 4,
+                      height: 18,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderWidth: 2,
+                      borderColor: '#FFFFFF',
+                    }}>
+                    <Text
+                      style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '700', lineHeight: 12 }}>
+                      ! {stat.message}
+                    </Text>
+                  </View>
+                )}
                 <View
-                  className="size-[34px] items-center justify-center rounded-[11px]"
-                  style={{ backgroundColor: stat.color + '22' }}>
-                  <stat.Icon color={stat.color} size={16} strokeWidth={2} />
+                  className="flex-1 items-center gap-[5px] rounded-[18px] p-3"
+                  style={{ backgroundColor: stat.bg }}>
+                  <View
+                    className="size-[34px] items-center justify-center rounded-[11px]"
+                    style={{ backgroundColor: stat.color + '22' }}>
+                    <stat.Icon color={stat.color} size={16} strokeWidth={2} />
+                  </View>
+                  <Text className="text-black text-[15px] font-extrabold">{stat.value}</Text>
+                  <Text className="text-muted-foreground text-center text-[10px] font-semibold">
+                    {stat.label}
+                  </Text>
                 </View>
-                <Text className="text-foreground text-[15px] font-extrabold">{stat.value}</Text>
-                <Text className="text-muted-foreground text-center text-[10px] font-semibold">
-                  {stat.label}
-                </Text>
               </Animated.View>
             ))}
           </View>
@@ -369,18 +490,22 @@ export default function HomeScreen() {
           <Animated.View
             entering={FadeInDown.duration(450).delay(290)}
             className="border-brand-milestone-border bg-brand-milestone-bg mx-4 mt-3.5 flex-row items-start gap-3 rounded-[18px] border p-3.5">
-            <View className="mt-px size-9 items-center justify-center rounded-[11px] bg-amber-200">
-              <Lightbulb color="#D97706" size={17} />
-            </View>
-            <View className="flex-1">
-              <Text className="text-brand-milestone-text mb-[3px] text-[10px] font-extrabold tracking-[1.2px]">
-                MILESTONE ALERT
-              </Text>
-              <Text className="text-brand-milestone-text text-sm leading-5 font-semibold">
-                {childName} should start crawling soon! Try a floor activity today.
-              </Text>
-            </View>
-            <Pressable onPress={() => router.push('/growth-check')}>
+            <Pressable
+              className="flex w-full flex-row items-center justify-between"
+              onPress={() => router.push('/milestones')}>
+              <View className="flex-row items-start gap-3">
+                <View className="mt-px size-9 items-center justify-center rounded-[11px] bg-amber-200">
+                  <Lightbulb color="#D97706" size={17} />
+                </View>
+                <View className="flex-1 text-wrap">
+                  <Text className="text-brand-milestone-text mb-[3px] text-[10px] font-extrabold tracking-[1.2px]">
+                    MILESTONE ALERT
+                  </Text>
+                  <Text className="text-brand-milestone-text text-sm leading-5 font-semibold">
+                    {childName} should start crawling soon! <br />Try a floor activity today.
+                  </Text>
+                </View>
+              </View>
               <ChevronRight color="#D97706" size={18} />
             </Pressable>
           </Animated.View>
@@ -388,10 +513,10 @@ export default function HomeScreen() {
           {/* ── Today's Care ── */}
           <Animated.View entering={FadeInDown.duration(450).delay(340)} className="mt-5 px-4">
             <View className="mb-3 flex-row items-center justify-between">
-              <Text className="text-foreground text-[17px] font-extrabold">Today&apos;s Care</Text>
+              <Text className="text-black text-[17px] font-extrabold">Today&apos;s Care</Text>
               <Pressable
                 onPress={() => router.push('/care-guide')}
-                className="bg-secondary rounded-full px-3 py-1">
+                className="bg-secondary rounded-full px-3 py-1.5">
                 <Text className="text-foreground text-xs font-bold">
                   {doneCare}/{careItems.length} Done
                 </Text>
@@ -405,7 +530,7 @@ export default function HomeScreen() {
                   entering={FadeInRight.duration(350).delay(370 + idx * 55)}>
                   <Pressable
                     onPress={() => toggleItem(item.id)}
-                    className={`flex-row items-center gap-3.5 px-4 py-3.5${idx < careItems.length - 1 ? 'border-secondary border-b' : ''}`}>
+                    className={`flex-row items-center gap-3.5 px-4 py-3.5 ${idx < careItems.length - 1 ? 'border-secondary border-b' : ''}`}>
                     <Checkbox.Root
                       checked={item.done}
                       onCheckedChange={() => toggleItem(item.id)}
@@ -462,15 +587,33 @@ export default function HomeScreen() {
 
           {/* ── All Features Grid ── */}
           <Animated.View entering={FadeInDown.duration(450).delay(520)} className="mt-5 mb-1 px-4">
-            <Text className="text-foreground mb-3.5 text-[17px] font-extrabold">All Features</Text>
+            <Text className="text-black mb-3.5 text-[17px] font-bold">Essentials</Text>
             <View className="flex-row flex-wrap justify-between">
               {FEATURES.map((feature, i) => (
                 <FeatureCard key={feature.route} feature={feature} index={i} />
               ))}
             </View>
           </Animated.View>
+
+          <Animated.View entering={FadeInDown.duration(450).delay(520)} className="mt-5 mb-1 px-4">
+            <Text className="text-black mb-3.5 text-[17px] font-bold">Medical Features</Text>
+            <View className="flex-row flex-wrap justify-between">
+              {MEDICALS.map((feature, i) => (
+                <FeatureCard key={feature.route} feature={feature} index={i} />
+              ))}
+            </View>
+          </Animated.View>
+
+          <Animated.View entering={FadeInDown.duration(450).delay(520)} className="mt-5 mb-1 px-4">
+            <Text className="text-black mb-3.5 text-[17px] font-bold">Extras</Text>
+            <View className="flex-row flex-wrap justify-between">
+              {EXTRAS.map((feature, i) => (
+                <FeatureCard key={feature.route} feature={feature} index={i} />
+              ))}
+            </View>
+          </Animated.View>
         </ScrollView>
-    </AndroidBlurScreenWrapper>
-      </SafeAreaView>
+      </AndroidBlurScreenWrapper>
+    </SafeAreaView>
   );
 }
