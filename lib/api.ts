@@ -44,7 +44,14 @@ export const sendRequest = async (url: string, method = 'GET', data = null, para
     console.error(`API Error during ${method} request to ${url}:`, (error as AxiosError).message);
 
     if ((error as AxiosError).response) {
-      throw new Error(((error as AxiosError).response?.data as any)?.message || 'Server Error');
+      const responseData = (error as AxiosError).response?.data as any;
+      if (responseData?.errors?.length > 0) {
+        const fieldErrors = (responseData.errors as { field?: string; message: string }[])
+          .map((e) => (e.field ? `${e.field}: ${e.message}` : e.message))
+          .join('\n');
+        throw new Error(fieldErrors);
+      }
+      throw new Error(responseData?.message || 'Server Error');
     } else if ((error as AxiosError).request) {
       throw new Error('No response received from server. Is Express running on port 3000?');
     } else {

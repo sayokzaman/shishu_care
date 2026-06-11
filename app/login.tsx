@@ -40,26 +40,23 @@ export default function LoginScreen() {
     orb1.value = withRepeat(
       withSequence(
         withTiming(1.18, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: 2400, easing: Easing.inOut(Easing.ease) })
       ),
       -1,
-      false,
+      false
     );
     orb2.value = withRepeat(
       withSequence(
         withTiming(0.85, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1.1, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1.1, { duration: 3000, easing: Easing.inOut(Easing.ease) })
       ),
       -1,
-      false,
+      false
     );
     orb3.value = withRepeat(
-      withSequence(
-        withTiming(0.06, { duration: 1800 }),
-        withTiming(0.12, { duration: 1800 }),
-      ),
+      withSequence(withTiming(0.06, { duration: 1800 }), withTiming(0.12, { duration: 1800 })),
       -1,
-      false,
+      false
     );
   }, []);
 
@@ -93,11 +90,10 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-brand-hero" edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
-
+    <SafeAreaView className="bg-brand-hero flex-1" edges={['top']}>
+      <View className="absolute inset-0 z-0 min-h-screen">
         {/* ── Hero ── */}
-        <View className="bg-brand-hero h-[290px] items-center justify-center px-6 pb-10 overflow-hidden">
+        <View className="bg-brand-hero items-center justify-center overflow-hidden px-6 py-20 pb-10">
           {/* Animated ambient orbs */}
           <Animated.View
             style={[
@@ -165,12 +161,12 @@ export default function LoginScreen() {
           </Animated.View>
 
           <Animated.View entering={FadeInDown.duration(500).delay(250)}>
-            <Text className="text-white text-[33px] font-extrabold tracking-tight mb-2 text-center">
+            <Text className="mb-2 text-center text-[33px] font-extrabold tracking-tight text-white">
               ShishuCare
             </Text>
           </Animated.View>
           <Animated.View entering={FadeInDown.duration(500).delay(350)}>
-            <Text className="text-white/70 text-center text-[14px] leading-6 font-medium">
+            <Text className="text-center text-[14px] leading-6 font-medium text-white/70">
               Your compassionate guide for{'\n'}every parenting journey
             </Text>
           </Animated.View>
@@ -179,22 +175,13 @@ export default function LoginScreen() {
         {/* ── Form card ── */}
         <Animated.View
           entering={FadeInDown.duration(600).delay(150).springify().damping(18)}
-          className="bg-background px-5 pt-8 pb-10"
-          style={{
-            borderTopLeftRadius: 36,
-            borderTopRightRadius: 36,
-            marginTop: -28,
-            minHeight: 520,
-          }}>
-
+          className="bg-background h-full w-full flex-1 rounded-t-3xl px-5 pt-8 pb-10">
           {/* Pill handle */}
-          <View className="w-10 h-1 rounded-full bg-border self-center mb-7" />
+          <View className="bg-border mb-7 h-1 w-10 self-center rounded-full" />
 
           <Animated.View entering={FadeInDown.duration(400).delay(350)}>
-            <Text className="text-foreground text-[28px] font-extrabold mb-1">
-              Welcome back
-            </Text>
-            <Text className="text-muted-foreground text-[14px] mb-7">
+            <Text className="text-foreground mb-1 text-[28px] font-extrabold">Welcome back</Text>
+            <Text className="text-muted-foreground mb-7 text-[14px]">
               Sign in to continue caring for your child
             </Text>
           </Animated.View>
@@ -203,22 +190,29 @@ export default function LoginScreen() {
           {error && (
             <Animated.View
               entering={FadeInDown.duration(300)}
-              className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 mb-5 flex-row items-start gap-3">
+              className="mb-5 flex-row items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3">
               <AlertTriangle color="#EF4444" size={16} strokeWidth={2} />
-              <Text className="text-red-600 text-[13px] flex-1 leading-5">{error}</Text>
+              <Text className="flex-1 text-[13px] leading-5 text-red-600">{error}</Text>
             </Animated.View>
           )}
 
           {/* Phone */}
           <Animated.View entering={FadeInDown.duration(400).delay(430)} className="mb-4">
-            <Text className="text-foreground text-[13px] font-semibold mb-2">Phone Number</Text>
+            <Text className="text-foreground mb-2 text-[13px] font-semibold">Phone Number</Text>
             <View style={{ position: 'relative' }}>
               <View
-                style={{ position: 'absolute', left: 16, top: 0, bottom: 0, justifyContent: 'center', zIndex: 10 }}>
+                style={{
+                  position: 'absolute',
+                  left: 16,
+                  top: 0,
+                  bottom: 0,
+                  justifyContent: 'center',
+                  zIndex: 10,
+                }}>
                 <Icon as={Phone} color="#0A0A0A" size={17} />
               </View>
               <Input
-                className="h-14 pl-12 rounded-2xl border-brand-input-border bg-brand-input-bg text-sm"
+                className="border-brand-input-border bg-brand-input-bg h-14 rounded-2xl pl-12 text-sm"
                 placeholder="017XX XXXXXX"
                 placeholderTextColor="#9CA3AF"
                 keyboardType="phone-pad"
@@ -230,14 +224,21 @@ export default function LoginScreen() {
 
           {/* Password */}
           <Animated.View entering={FadeInDown.duration(400).delay(490)} className="mb-7">
-            <Text className="text-foreground text-[13px] font-semibold mb-2">Password</Text>
+            <Text className="text-foreground mb-2 text-[13px] font-semibold">Password</Text>
             <View style={{ position: 'relative' }}>
               <View
-                style={{ position: 'absolute', left: 16, top: 0, bottom: 0, justifyContent: 'center', zIndex: 10 }}>
+                style={{
+                  position: 'absolute',
+                  left: 16,
+                  top: 0,
+                  bottom: 0,
+                  justifyContent: 'center',
+                  zIndex: 10,
+                }}>
                 <Icon as={Lock} color="#0A0A0A" size={17} />
               </View>
               <Input
-                className="h-14 pl-12 pr-14 rounded-2xl border-brand-input-border bg-brand-input-bg text-sm"
+                className="border-brand-input-border bg-brand-input-bg h-14 rounded-2xl pr-14 pl-12 text-sm"
                 placeholder="Enter your password"
                 placeholderTextColor="#9CA3AF"
                 secureTextEntry={!showPassword}
@@ -245,7 +246,13 @@ export default function LoginScreen() {
                 onChangeText={setPassword}
               />
               <Pressable
-                style={{ position: 'absolute', right: 16, top: 0, bottom: 0, justifyContent: 'center' }}
+                style={{
+                  position: 'absolute',
+                  right: 16,
+                  top: 0,
+                  bottom: 0,
+                  justifyContent: 'center',
+                }}
                 onPress={() => setShowPassword(!showPassword)}>
                 <Icon as={showPassword ? EyeOff : Eye} color="#9CA3AF" size={18} />
               </Pressable>
@@ -277,24 +284,28 @@ export default function LoginScreen() {
               {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text className="text-white text-[16px] font-bold tracking-wide">Sign In</Text>
+                <Text className="text-[16px] font-bold tracking-wide text-white">Sign In</Text>
               )}
             </AnimatedPressable>
           </Animated.View>
 
           {/* Language toggle */}
-          <Animated.View entering={FadeInDown.duration(400).delay(600)} className="flex-row justify-center gap-2 mb-7">
+          <Animated.View
+            entering={FadeInDown.duration(400).delay(600)}
+            className="mb-7 flex-row justify-center gap-2">
             <Pressable
               className={`rounded-full px-4 py-1.5 ${lang === 'en' ? 'bg-brand-primary-light' : 'bg-muted'}`}
               onPress={() => setLang('en')}>
-              <Text className={`text-[13px] font-semibold ${lang === 'en' ? 'text-primary' : 'text-muted-foreground'}`}>
+              <Text
+                className={`text-[13px] font-semibold ${lang === 'en' ? 'text-primary' : 'text-muted-foreground'}`}>
                 English
               </Text>
             </Pressable>
             <Pressable
               className={`rounded-full px-4 py-1.5 ${lang === 'bn' ? 'bg-brand-primary-light' : 'bg-muted'}`}
               onPress={() => setLang('bn')}>
-              <Text className={`text-[13px] font-semibold ${lang === 'bn' ? 'text-primary' : 'text-muted-foreground'}`}>
+              <Text
+                className={`text-[13px] font-semibold ${lang === 'bn' ? 'text-primary' : 'text-muted-foreground'}`}>
                 বাংলা
               </Text>
             </Pressable>
@@ -309,7 +320,7 @@ export default function LoginScreen() {
             </Text>
           </Animated.View>
         </Animated.View>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
