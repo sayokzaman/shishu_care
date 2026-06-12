@@ -1,15 +1,25 @@
 import { Text } from '@/components/ui/text';
 import { getAgeBracket, getAgeMonths, loadChild } from '@/lib/child';
 import { router } from 'expo-router';
-import { ArrowLeft, Lightbulb, RefreshCw } from 'lucide-react-native';
+import { ArrowLeft, Lightbulb, RefreshCw, Zap } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withSequence, withSpring } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import Header from '@/components/header';
+
+type AgeBracket = 'prenatal' | '0-1m' | '1-6m' | '6-12m' | '1-2y' | '2-3y' | '3-5y';
 
 const FUN_FACTS: string[] = [
-  'Babies can recognise their mother\'s voice from inside the womb.',
-  'A newborn\'s brain doubles in size in the first year.',
+  "Babies can recognise their mother's voice from inside the womb.",
+  "A newborn's brain doubles in size in the first year.",
   'Singing to your baby helps develop language faster.',
   'Babies are born with 300 bones; adults have 206.',
   'Tummy time helps prevent flat head and builds neck strength.',
@@ -23,17 +33,44 @@ const FUN_FACTS: string[] = [
   '"আমার সোনার বাংলা" — knowing our national anthem builds cultural identity.',
 ];
 
-const ACTIVITY_IDEAS = [
-  { emoji: '📚', title: 'Read Together',       desc: 'Pick a picture book and name the objects on each page.',            time: '10 min' },
-  { emoji: '🎵', title: 'Sing a Nursery Rhyme', desc: '"আয় আয় চাঁদ মামা" — repetition builds language.',                 time: '5 min'  },
-  { emoji: '🖐️', title: 'Clapping Game',        desc: 'Clap and copy rhythms together to develop motor coordination.',     time: '5 min'  },
-  { emoji: '🌿', title: 'Nature Walk',           desc: 'Point out colours, textures, and sounds during a short walk.',      time: '20 min' },
-];
+type PuzzleGame = { emojis: string[]; answer: string; question: string };
+
+const PUZZLES_BY_BRACKET: Record<string, PuzzleGame[]> = {
+  prenatal: [{ emojis: ['🤱', '💊', '🏥'], answer: '1', question: 'Which one is the doctor?' }],
+  '0-1m': [{ emojis: ['🌞', '🌙', '⭐'], answer: '0', question: 'Which one is the sun?' }],
+  '1-6m': [
+    { emojis: ['🐱', '🐶', '🐸'], answer: '1', question: 'Which one says "woof"?' },
+    { emojis: ['🍌', '🍎', '🍊'], answer: '0', question: 'Which one is yellow?' },
+  ],
+  '6-12m': [
+    { emojis: ['🍼', '🧸', '🎈'], answer: '0', question: 'Baby drinks from the?' },
+    { emojis: ['🌧️', '☀️', '❄️'], answer: '1', question: 'Which one is bright and warm?' },
+    { emojis: ['🐘', '🐭', '🦁'], answer: '0', question: 'Which one is the biggest?' },
+  ],
+  '1-2y': [
+    { emojis: ['🔴', '🟡', '🔵'], answer: '0', question: 'Point to red!' },
+    { emojis: ['🐓', '🐟', '🐢'], answer: '0', question: 'Which one says "cluck cluck"?' },
+    { emojis: ['🌳', '🌸', '🌵'], answer: '2', question: 'Which one needs very little water?' },
+    { emojis: ['🚗', '✈️', '🚂'], answer: '1', question: 'Which one flies in the sky?' },
+  ],
+  '2-3y': [
+    { emojis: ['🦁', '🐯', '🐻'], answer: '2', question: 'Which one is a bear?' },
+    { emojis: ['⬛', '🔵', '🔺'], answer: '2', question: 'Which one is a triangle?' },
+    { emojis: ['🌊', '🔥', '🌬️'], answer: '1', question: 'Which one is hot?' },
+    { emojis: ['🍕', '🍰', '🥗'], answer: '2', question: 'Which one has vegetables?' },
+  ],
+  '3-5y': [
+    { emojis: ['🦋', '🐛', '🥚'], answer: '2', question: "Which comes first in a butterfly's life?" },
+    { emojis: ['🌑', '🌓', '🌕'], answer: '2', question: 'Which is a full moon?' },
+    { emojis: ['🔢', '🔡', '🎵'], answer: '0', question: 'Which is for counting?' },
+    { emojis: ['☁️', '💧', '🌊'], answer: '1', question: 'Rain falls as?' },
+    { emojis: ['🌍', '⭐', '🌙'], answer: '0', question: 'Which one do we live on?' },
+  ],
+};
 
 type GameCard = {
   id: string; emoji: string; title: string; titleBn: string;
   desc: string; color: string; textColor: string; route: string; age: string;
-};
 
 const GAMES: GameCard[] = [
   // Row 1 — Core
@@ -60,6 +97,56 @@ const GAMES: GameCard[] = [
   { id: 'addition',  emoji: '➕', title: 'Simple Sums',       titleBn: 'যোগ করো',             desc: 'Count emoji groups to add',          color: '#ECFDF5', textColor: '#065F46', route: '/game-addition',       age: '4–5y'  },
   { id: 'abc',       emoji: '🔡', title: 'Learn A-B-C',       titleBn: 'অ-আ-ক-খ',            desc: 'Letters in English & Bangla',       color: '#FFFBEB', textColor: '#92400E', route: '/learn-abc',           age: '2–5y'  },
 ];
+
+function PuzzleCard({ puzzle, onCorrect }: { puzzle: PuzzleGame; onCorrect: () => void }) {
+  const [selected, setSelected] = useState<number | null>(null);
+  const scale = useSharedValue(1);
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  const handleSelect = (idx: number) => {
+    if (selected !== null) return;
+    setSelected(idx);
+    const correct = idx === parseInt(puzzle.answer);
+    if (correct) {
+      scale.value = withSequence(withSpring(1.08), withSpring(1));
+      setTimeout(onCorrect, 600);
+    } else {
+      scale.value = withSequence(withTiming(0.96), withSpring(1));
+    }
+  };
+
+  return (
+    <Animated.View style={[style]}>
+      <View style={{ backgroundColor: '#F5F5F5', borderRadius: 20, padding: 20, alignItems: 'center', marginBottom: 16 }}>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: '#0A0A0A', marginBottom: 20, textAlign: 'center' }}>
+          {puzzle.question}
+        </Text>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          {puzzle.emojis.map((emoji, idx) => {
+            const isAnswer = idx === parseInt(puzzle.answer);
+            let bg = '#FFFFFF';
+            let border = '#E5E5E5';
+            if (selected !== null) {
+              if (isAnswer) { bg = '#ECFDF5'; border = '#6EE7B7'; }
+              else if (selected === idx) { bg = '#FEF2F2'; border = '#FECACA'; }
+            }
+            return (
+              <Pressable key={idx} onPress={() => handleSelect(idx)}
+                style={{ width: 80, height: 80, borderRadius: 18, backgroundColor: bg, borderWidth: 2, borderColor: border, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 36 }}>{emoji}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        {selected !== null && (
+          <Text style={{ marginTop: 14, fontSize: 14, fontWeight: '700', color: selected === parseInt(puzzle.answer) ? '#0A0A0A' : '#DC2626' }}>
+            {selected === parseInt(puzzle.answer) ? '🎉 Correct! Great job!' : `Not quite — the answer was ${puzzle.emojis[parseInt(puzzle.answer)]}!`}
+          </Text>
+        )}
+      </View>
+    </Animated.View>
+  );
+}
 
 function GameCardItem({ game, index }: { game: GameCard; index: number }) {
   const scale = useSharedValue(1);
@@ -89,47 +176,82 @@ function GameCardItem({ game, index }: { game: GameCard; index: number }) {
 export default function GamesScreen() {
   const [bracket, setBracket] = useState('1-2y');
   const [factIdx, setFactIdx] = useState(0);
+  const [score, setScore] = useState(0);
+  const [puzzleIdx, setPuzzleIdx] = useState(0);
 
   useEffect(() => {
-    loadChild().then(c => {
+    loadChild().then((c) => {
       if (!c) return;
       setBracket(getAgeBracket(getAgeMonths(c.dob)));
     });
     setFactIdx(Math.floor(Math.random() * FUN_FACTS.length));
   }, []);
 
-  const nextFact = () => setFactIdx(i => (i + 1) % FUN_FACTS.length);
+  const puzzles = PUZZLES_BY_BRACKET[bracket] || PUZZLES_BY_BRACKET['1-2y'];
+  const currentPuzzle = puzzles[puzzleIdx % puzzles.length];
+
+  const handleCorrect = () => {
+    setScore((s) => s + 1);
+    setPuzzleIdx((i) => i + 1);
+  };
+
+  const nextFact = () => setFactIdx((i) => (i + 1) % FUN_FACTS.length);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F5F5F5' }}>
-        <Pressable onPress={() => router.back()} style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#F5F5F5', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-          <ArrowLeft size={18} color="#0A0A0A" />
-        </Pressable>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 18, fontWeight: '800', color: '#0A0A0A' }}>Learning Games</Text>
-          <Text style={{ fontSize: 12, color: '#737373' }}>শেখার খেলা · {GAMES.length} games</Text>
+      <Header title="Mental Growth Games" emoji="🧠">
+        <View style={{ backgroundColor: '#0F5238', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6, flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+          <Zap size={13} color="white" />
+          <Text style={{ color: 'white', fontSize: 13, fontWeight: '700' }}>{score}</Text>
         </View>
-      </View>
+      </Header>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 110 }}>
         {/* Fun fact */}
-        <Animated.View entering={FadeInDown.duration(400).delay(40)}
-          style={{ backgroundColor: '#0A0A0A', borderRadius: 20, padding: 20, marginBottom: 24 }}>
+        <Animated.View
+          entering={FadeInDown.duration(400).delay(50)}
+          style={{ backgroundColor: 'rgba(15, 82, 56, 0.9)', borderRadius: 20, padding: 20, marginBottom: 20 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
               <Lightbulb size={16} color="#FCD34D" />
-              <Text style={{ color: '#FCD34D', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 }}>Daily Fun Fact</Text>
+              <Text
+                style={{
+                  color: '#FCD34D',
+                  fontSize: 12,
+                  fontWeight: '700',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.8,
+                }}>
+                Daily Fun Fact
+              </Text>
             </View>
-            <Pressable onPress={nextFact} style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' }}>
+            <Pressable
+              onPress={nextFact}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                backgroundColor: 'rgba(255,255,255,0.1)',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
               <RefreshCw size={14} color="rgba(255,255,255,0.7)" />
             </Pressable>
           </View>
-          <Text style={{ color: 'white', fontSize: 15, lineHeight: 24, fontWeight: '500' }}>{FUN_FACTS[factIdx]}</Text>
+          <Text style={{ color: 'white', fontSize: 15, lineHeight: 24, fontWeight: '500' }}>
+            {FUN_FACTS[factIdx]}
+          </Text>
+        </Animated.View>
+
+        {/* Puzzle game */}
+        <Animated.View entering={FadeInDown.duration(400).delay(60)}>
+          <Text style={{ fontSize: 16, fontWeight: '800', color: '#0A0A0A', marginBottom: 4 }}>Puzzle Time</Text>
+          <Text style={{ fontSize: 13, color: '#737373', marginBottom: 14 }}>Help your child point to the right answer!</Text>
+          <PuzzleCard key={`${bracket}-${puzzleIdx}`} puzzle={currentPuzzle} onCorrect={handleCorrect} />
         </Animated.View>
 
         {/* Game grid */}
-        <Animated.View entering={FadeInDown.duration(400).delay(60)}>
+        <Animated.View entering={FadeInDown.duration(400).delay(100)}>
           <Text style={{ fontSize: 16, fontWeight: '800', color: '#0A0A0A', marginBottom: 4 }}>All {GAMES.length} Games</Text>
           <Text style={{ fontSize: 13, color: '#737373', marginBottom: 14 }}>Age shown on each card · বয়স অনুযায়ী খেলো!</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
@@ -140,14 +262,32 @@ export default function GamesScreen() {
         {/* Activity suggestions */}
         <Animated.View entering={FadeInDown.duration(400).delay(160)}>
           <Text style={{ fontSize: 16, fontWeight: '800', color: '#0A0A0A', marginBottom: 12, marginTop: 8 }}>Activity Ideas for Today</Text>
-          {ACTIVITY_IDEAS.map((act, i) => (
+          {[
+            { emoji: '📚', title: 'Read Together', desc: 'Pick a picture book and name the objects on each page.', time: '10 min' },
+            { emoji: '🎵', title: 'Sing a Nursery Rhyme', desc: 'Amar sonar bangla or Twinkle Twinkle — repetition builds language.', time: '5 min' },
+            { emoji: '🖐️', title: 'Clapping Game', desc: 'Clap and copy rhythms together to develop motor coordination.', time: '5 min' },
+            { emoji: '🌿', title: 'Nature Walk', desc: 'Point out colours, textures, and sounds during a short outdoor walk.', time: '20 min' },
+          ].map((act, i) => (
             <Animated.View key={act.title} entering={FadeInDown.duration(400).delay(180 + i * 60)}
-              style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: '#E5E5E5', marginBottom: 8 }}>
+              style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: '#E5E5E5', marginBottom: 8, backgroundColor: '#FFFFFF' }}>
               <Text style={{ fontSize: 28, marginTop: 2 }}>{act.emoji}</Text>
               <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: '#0A0A0A' }}>{act.title}</Text>
-                  <View style={{ backgroundColor: '#F5F5F5', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    marginBottom: 3,
+                  }}>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: '#0A0A0A' }}>
+                    {act.title}
+                  </Text>
+                  <View
+                    style={{
+                      backgroundColor: '#F5F5F5',
+                      borderRadius: 6,
+                      paddingHorizontal: 7,
+                      paddingVertical: 2,
+                    }}>
                     <Text style={{ fontSize: 11, color: '#737373' }}>{act.time}</Text>
                   </View>
                 </View>

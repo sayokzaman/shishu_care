@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export const CHILD_KEY = 'shishucare_child';
 
 export interface ChildData {
+  id?: number;         // DB primary key — set after onboarding, used for API calls
   name: string;
   dob: string;         // ISO date string (can be future for prenatal)
   gender: 'male' | 'female' | 'other';

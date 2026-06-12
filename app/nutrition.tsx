@@ -1,11 +1,12 @@
 import { Text } from '@/components/ui/text';
 import { formatAge, getAgeBracket, getAgeMonths, loadChild } from '@/lib/child';
 import { router } from 'expo-router';
-import { ArrowLeft, Droplets, Fish, Leaf, Wheat, Sparkles, ChevronDown, ChevronUp, Loader } from 'lucide-react-native';
+import { ArrowLeft, Droplets, Fish, Leaf, Wheat, Sparkles, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { ScrollView, View, Pressable, TextInput, Modal, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import Header from '@/components/header'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -172,19 +173,11 @@ export default function NutritionScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F5F5F5' }}>
-        <Pressable onPress={() => router.back()} style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#F5F5F5', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-          <ArrowLeft size={18} color="#0A0A0A" />
-        </Pressable>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: '#0A0A0A' }}>Nutrition Guide</Text>
-          {ageLabel ? <Text style={{ fontSize: 12, color: '#737373' }}>{childName} · {ageLabel}</Text> : null}
-        </View>
-      </View>
+      <Header title="Nutrition" emoji="🥗"/>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 110 }}>
 
-        <Animated.View entering={FadeInDown.duration(400).delay(50)} style={{ backgroundColor: '#0A0A0A', borderRadius: 20, padding: 20, marginBottom: 20 }}>
+        <Animated.View entering={FadeInDown.duration(400).delay(50)} style={{ backgroundColor: '#0F5238', borderRadius: 20, padding: 20, marginBottom: 20 }}>
           <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>Personalised for {childName}</Text>
           <Text style={{ color: 'white', fontSize: 18, fontWeight: '800', marginBottom: 8 }}>{plan.headline}</Text>
           <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, lineHeight: 21 }}>{plan.summary}</Text>

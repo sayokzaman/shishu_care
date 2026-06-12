@@ -1,4 +1,5 @@
-import { AndroidBlurScreenWrapper } from '@/app/(tabs)/_layout'
+import { AndroidBlurScreenWrapper } from '@/app/(tabs)/_layout';
+import Header from '@/components/header'
 import { Text } from '@/components/ui/text';
 import * as Tabs from '@rn-primitives/tabs';
 import {
@@ -21,6 +22,7 @@ import Animated, {
   useAnimatedStyle,
   Easing,
 } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const WEEK_DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const FEED_DATA = [6, 7, 5, 6, 8, 6, 5];
@@ -86,18 +88,13 @@ export default function InsightsPage() {
   const barColor = tab === 'feeds' ? 'rgba(255,255,255,0.75)' : 'rgba(196,181,253,0.85)';
 
   return (
-    <AndroidBlurScreenWrapper>
-      <View className="bg-background flex-1">
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 110 }}>
+          contentContainerStyle={{ paddingBottom: 110 }}
+          className="flex-1">
           {/* ── Header ── */}
-          <Animated.View entering={FadeInDown.duration(400).delay(50)} className="px-4 pt-4 pb-2">
-            <Text className="text-foreground text-[26px] font-extrabold">Insights</Text>
-            <Text className="text-muted-foreground mt-0.5 text-[13px]">
-              Aayan&apos;s health overview
-            </Text>
-          </Animated.View>
+          <Header title="Insights" emoji="📈" secondaryText='Aayan&apos;s health overview'/>
 
           {/* ── Weekly Summary ── */}
           <Animated.View
@@ -426,7 +423,6 @@ export default function InsightsPage() {
             </View>
           </Animated.View>
         </ScrollView>
-      </View>
-    </AndroidBlurScreenWrapper>
+    </SafeAreaView>
   );
 }
