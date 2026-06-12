@@ -17,6 +17,7 @@ import {
   Gamepad2,
   Lightbulb,
   MessageCircle,
+  Mic,
   Moon,
   ShieldCheck,
   Sparkles,
@@ -153,6 +154,14 @@ const EXTRAS: Feature[] = [
     color: '#4F46E5',
     bg: '#EEF2FF',
     route: '/community',
+  },
+  {
+    label: 'Cry Analyzer',
+    sub: 'Why is baby crying?',
+    Icon: Mic,
+    color: '#7C3AED',
+    bg: '#F5F3FF',
+    route: '/baby-cry-analyzer',
   },
   {
     label: 'Dashboard',

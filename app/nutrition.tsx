@@ -1,12 +1,14 @@
 import { Text } from '@/components/ui/text';
 import { formatAge, getAgeBracket, getAgeMonths, loadChild } from '@/lib/child';
-import { RelativePathString, router } from 'expo-router';
-import { ArrowLeft, Droplets, Fish, Leaf, Wheat } from 'lucide-react-native';
+import { router } from 'expo-router';
+import { ArrowLeft, Droplets, Fish, Leaf, Wheat, Sparkles, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { ScrollView, View, Pressable } from 'react-native';
+import { ScrollView, View, Pressable, TextInput, Modal, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Header from '@/components/header'
+
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
 type AgeBracket = 'prenatal' | '0-1m' | '1-6m' | '6-12m' | '1-2y' | '2-3y' | '3-5y';
 
@@ -105,6 +107,19 @@ export default function NutritionScreen() {
   const [childName, setChildName] = useState('Your Child');
   const [ageLabel, setAgeLabel] = useState('');
   const [bracket, setBracket] = useState<AgeBracket>('1-6m');
+  const [childAgeMonths, setChildAgeMonths] = useState(6);
+
+  // AI Meal Planner state
+  const [plannerOpen, setPlannerOpen] = useState(false);
+  const [plannerLoading, setPlannerLoading] = useState(false);
+  const [mealPlan, setMealPlan] = useState<any>(null);
+  const [plannerForm, setPlannerForm] = useState({
+    weight: '',
+    height: '',
+    isBreastfeeding: false,
+    isPregnant: false,
+    activity: 'Little/no exercise',
+  });
 
   useEffect(() => {
     loadChild().then(c => {
@@ -113,8 +128,46 @@ export default function NutritionScreen() {
       const m = getAgeMonths(c.dob);
       setAgeLabel(formatAge(m));
       setBracket(getAgeBracket(m) as AgeBracket);
+      setChildAgeMonths(m);
     });
   }, []);
+
+  const generateMealPlan = async () => {
+    if (!plannerForm.weight || !plannerForm.height) {
+      Alert.alert('Missing Info', 'Please enter your weight and height.');
+      return;
+    }
+    setPlannerLoading(true);
+    try {
+      const endpoint = childAgeMonths >= 6
+        ? `${API_BASE}/api/ml/child-food-guide`
+        : `${API_BASE}/api/ml/mother-meal-plan`;
+
+      const body = childAgeMonths >= 6
+        ? { child_age_months: childAgeMonths, number_of_meals: 3 }
+        : {
+            age: 28,
+            height: parseFloat(plannerForm.height),
+            weight: parseFloat(plannerForm.weight),
+            is_breastfeeding: plannerForm.isBreastfeeding,
+            is_pregnant: plannerForm.isPregnant,
+            activity: plannerForm.activity,
+            number_of_meals: 3,
+          };
+
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!resp.ok) throw new Error(await resp.text());
+      setMealPlan(await resp.json());
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Could not generate meal plan. Is the ML service running?');
+    } finally {
+      setPlannerLoading(false);
+    }
+  };
 
   const plan = PLANS[bracket];
 
@@ -166,10 +219,136 @@ export default function NutritionScreen() {
         </Animated.View>
 
         {/* Tip */}
-        <Animated.View entering={FadeInDown.duration(400).delay(100 + plan.groups.length * 70 + 120)} style={{ backgroundColor: '#F5F5F5', borderRadius: 16, padding: 16 }}>
+        <Animated.View entering={FadeInDown.duration(400).delay(100 + plan.groups.length * 70 + 120)} style={{ backgroundColor: '#F5F5F5', borderRadius: 16, padding: 16, marginBottom: 16 }}>
           <Text style={{ fontSize: 13, fontWeight: '700', color: '#0A0A0A', marginBottom: 6 }}>Pro Tip</Text>
           <Text style={{ fontSize: 13, color: '#374151', lineHeight: 20 }}>{plan.tip}</Text>
         </Animated.View>
+
+        {/* ── AI Meal Planner Section ── */}
+        <Animated.View entering={FadeInDown.duration(400).delay(400)}>
+          <Pressable
+            onPress={() => setPlannerOpen(!plannerOpen)}
+            style={{
+              backgroundColor: '#0A0A0A', borderRadius: 20, padding: 20,
+              flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12,
+            }}
+          >
+            <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' }}>
+              <Sparkles size={22} color="#FFFFFF" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: 'white', fontSize: 16, fontWeight: '800' }}>AI Meal Planner</Text>
+              <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 2 }}>
+                Personalised plan for you · Powered by NutriMind
+              </Text>
+            </View>
+            {plannerOpen
+              ? <ChevronUp size={20} color="rgba(255,255,255,0.6)" />
+              : <ChevronDown size={20} color="rgba(255,255,255,0.6)" />}
+          </Pressable>
+
+          {plannerOpen && (
+            <View style={{ backgroundColor: '#F5F5F5', borderRadius: 16, padding: 16, marginBottom: 12 }}>
+              {/* Weight & Height inputs */}
+              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: '#737373', marginBottom: 6 }}>Weight (kg)</Text>
+                  <TextInput
+                    placeholder="e.g. 55"
+                    value={plannerForm.weight}
+                    onChangeText={v => setPlannerForm(f => ({ ...f, weight: v }))}
+                    keyboardType="numeric"
+                    style={{ backgroundColor: 'white', borderRadius: 12, padding: 12, fontSize: 15, color: '#0A0A0A', borderWidth: 1, borderColor: '#E5E7EB' }}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: '#737373', marginBottom: 6 }}>Height (cm)</Text>
+                  <TextInput
+                    placeholder="e.g. 158"
+                    value={plannerForm.height}
+                    onChangeText={v => setPlannerForm(f => ({ ...f, height: v }))}
+                    keyboardType="numeric"
+                    style={{ backgroundColor: 'white', borderRadius: 12, padding: 12, fontSize: 15, color: '#0A0A0A', borderWidth: 1, borderColor: '#E5E7EB' }}
+                  />
+                </View>
+              </View>
+
+              {/* Breastfeeding toggle */}
+              <Pressable
+                onPress={() => setPlannerForm(f => ({ ...f, isBreastfeeding: !f.isBreastfeeding }))}
+                style={{
+                  flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                  backgroundColor: 'white', borderRadius: 12, padding: 14, marginBottom: 10,
+                  borderWidth: 1, borderColor: plannerForm.isBreastfeeding ? '#0A0A0A' : '#E5E7EB',
+                }}
+              >
+                <Text style={{ fontSize: 14, color: '#0A0A0A', fontWeight: '600' }}>🤱 Breastfeeding</Text>
+                <View style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: plannerForm.isBreastfeeding ? '#0A0A0A' : '#E5E7EB', justifyContent: 'center', paddingHorizontal: 2 }}>
+                  <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: 'white', alignSelf: plannerForm.isBreastfeeding ? 'flex-end' : 'flex-start' }} />
+                </View>
+              </Pressable>
+
+              {/* Generate button */}
+              <Pressable
+                onPress={generateMealPlan}
+                disabled={plannerLoading}
+                style={{ backgroundColor: '#0A0A0A', borderRadius: 14, padding: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, opacity: plannerLoading ? 0.7 : 1 }}
+              >
+                {plannerLoading
+                  ? <ActivityIndicator size="small" color="white" />
+                  : <Sparkles size={18} color="white" />}
+                <Text style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>
+                  {plannerLoading ? 'Generating...' : 'Generate My Meal Plan'}
+                </Text>
+              </Pressable>
+            </View>
+          )}
+
+          {/* Meal Plan Results */}
+          {mealPlan && (
+            <View style={{ gap: 10 }}>
+              {/* Stats card */}
+              <View style={{ backgroundColor: '#ECFDF5', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#6EE7B7', marginBottom: 4 }}>
+                {mealPlan.daily_calorie_target && (
+                  <Text style={{ fontSize: 16, fontWeight: '800', color: '#065F46' }}>
+                    🎯 {mealPlan.daily_calorie_target} kcal / day
+                  </Text>
+                )}
+                {mealPlan.bmi && (
+                  <Text style={{ fontSize: 13, color: '#047857', marginTop: 4 }}>BMI: {mealPlan.bmi}</Text>
+                )}
+                {(mealPlan.calorie_note || mealPlan.age_feeding_note) && (
+                  <Text style={{ fontSize: 12, color: '#065F46', marginTop: 6, lineHeight: 18 }}>
+                    {mealPlan.calorie_note || mealPlan.age_feeding_note}
+                  </Text>
+                )}
+              </View>
+
+              {mealPlan.meals?.map((meal: any, idx: number) => (
+                <View key={idx} style={{ backgroundColor: 'white', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#F3F4F6' }}>
+                  <Text style={{ fontSize: 14, fontWeight: '800', color: '#0A0A0A', textTransform: 'capitalize', marginBottom: 10 }}>
+                    {meal.meal_name === 'breakfast' ? '🌅' : meal.meal_name === 'lunch' ? '☀️' : meal.meal_name === 'dinner' ? '🌙' : '🍎'} {meal.meal_name}
+                  </Text>
+                  {meal.recipes?.slice(0, 2).map((recipe: any, ri: number) => (
+                    <View key={ri} style={{ backgroundColor: '#F9FAFB', borderRadius: 12, padding: 12, marginBottom: 8 }}>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: '#111827', marginBottom: 4 }}>{recipe.Name}</Text>
+                      <View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}>
+                        <Text style={{ fontSize: 11, color: '#6B7280' }}>🔥 {Math.round(recipe.Calories)} kcal</Text>
+                        <Text style={{ fontSize: 11, color: '#6B7280' }}>🥩 {Math.round(recipe.ProteinContent)}g protein</Text>
+                        <Text style={{ fontSize: 11, color: '#6B7280' }}>🌾 {Math.round(recipe.CarbohydrateContent)}g carbs</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              ))}
+
+              <Text style={{ fontSize: 11, color: '#9CA3AF', textAlign: 'center', paddingVertical: 8, lineHeight: 16 }}>
+                ⚠️ AI recommendations only. Always consult a nutritionist or doctor for medical dietary advice.
+              </Text>
+            </View>
+          )}
+        </Animated.View>
+
       </ScrollView>
     </SafeAreaView>
   );
