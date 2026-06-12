@@ -44,9 +44,9 @@ export const recordVaccination = async (id: number, givenDate: string, facilityN
   return sendRequest(`/api/vaccinations/${id}`, 'PATCH', { givenDate, facilityName } as any);
 };
 
-export const sendRequest = async (url: string, method = 'GET', data = null, params = null) => {
+export const sendRequest = async (url: string, method = 'GET', data = null, params = null, timeout?: number) => {
   try {
-    const response = await apiClient({ url, method, data, params });
+    const response = await apiClient({ url, method, data, params, ...(timeout ? { timeout } : {}) });
     return response.data;
   } catch (error) {
     console.error(`API Error during ${method} request to ${url}:`, (error as AxiosError).message);

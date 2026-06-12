@@ -469,7 +469,9 @@ export default function HomeScreen() {
           <Animated.View
             entering={FadeInDown.duration(450).delay(230)}
             className="mt-3.5 gap-2.5 px-4">
-            <View className="bg-brand-input-bg border-border h-14 flex-row items-center gap-3 rounded-[18px] border px-4">
+            <Pressable
+              onPress={() => router.push('/nurture-ai')}
+              className="bg-brand-input-bg border-border h-14 flex-row items-center gap-3 rounded-[18px] border px-4">
               <View className="relative size-5 items-center justify-center">
                 <PulseRing />
                 <Sparkles color="#0A0A0A" size={20} />
@@ -477,7 +479,7 @@ export default function HomeScreen() {
               <Text className="flex-1 text-sm text-[#A3A3A3]">
                 Ask NurtureAI… e.g. baby has mild fever
               </Text>
-            </View>
+            </Pressable>
             <Pressable
               onPress={() => router.push('/risk-report')}
               className="border-brand-risk-border bg-brand-risk-bg h-12 flex-row items-center justify-center gap-2 rounded-2xl border">
