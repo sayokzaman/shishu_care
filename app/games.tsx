@@ -71,6 +71,7 @@ const PUZZLES_BY_BRACKET: Record<string, PuzzleGame[]> = {
 type GameCard = {
   id: string; emoji: string; title: string; titleBn: string;
   desc: string; color: string; textColor: string; route: string; age: string;
+};
 
 const GAMES: GameCard[] = [
   // Row 1 — Core
